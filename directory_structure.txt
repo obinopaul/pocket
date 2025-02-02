@@ -1,0 +1,26 @@
+Pocket/
+├── app/
+│   ├── main.py
+│   ├── templates/
+│   │   ├── index.html
+│   │   └── create_trip.html
+│   └── static/
+│       ├── css/
+│       │   └── styles.css
+│       ├── js/
+│       │   ├── ui/
+│       │   │   ├── button.jsx
+│       │   │   ├── input.jsx
+│       │   │   ├── dialog.jsx
+│       │   │   ├── marquee.jsx
+│       │   │   └── ... (other UI components)
+│       │   ├── constants/
+│       │   │   └── ThemeToggle.jsx
+│       │   ├── hooks/
+│       │   │   └── useSpeechRecognition.jsx
+│       │   ├── header.jsx
+│       │   ├── index.jsx
+│       │   ├── create_trip.jsx
+│       │   └── footer.jsx
+├── requirements.txt
+└── README.md

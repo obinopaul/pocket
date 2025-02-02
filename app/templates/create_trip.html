@@ -1,0 +1,28 @@
+<!-- app/templates/create_trip.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pocket Traveller - Plan a Trip</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Load the common header and footer plus the CreateTrip component -->
+  <script type="text/babel" src="/static/js/header.jsx"></script>
+  <script type="text/babel" src="/static/js/create_trip.jsx"></script>
+  <script type="text/babel" src="/static/js/footer.jsx"></script>
+  
+  <script type="text/babel">
+    // Render the CreateTrip component.
+    ReactDOM.render(
+      <CreateTrip />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+</html>

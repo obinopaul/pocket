@@ -1,0 +1,31 @@
+<!-- app/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pocket Traveller - Home</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <!-- Include React and Babel (development-only) -->
+  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+</head>
+<body>
+  <!-- A container where your React app will render -->
+  <div id="root"></div>
+
+  <!-- Load your React components -->
+  <script type="text/babel" src="/static/js/header.jsx"></script>
+  <script type="text/babel" src="/static/js/index.jsx"></script>
+  <script type="text/babel" src="/static/js/footer.jsx"></script>
+  
+  <script type="text/babel">
+    // Example: Render the homepage (Hero) component into the "root" div.
+    // (Assuming your index.jsx file exports a component named "Hero")
+    ReactDOM.render(
+      <Hero heroRef={React.createRef()} />,
+      document.getElementById('root')
+    );
+  </script>
+</body>
+</html>

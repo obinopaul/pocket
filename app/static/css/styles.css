@@ -1,0 +1,13 @@
+/* app/static/css/styles.css */
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background-color: #f9f9f9;
+  }
+  
+  /* Example styles for header and footer if needed */
+  header, footer {
+    padding: 1rem;
+    background-color: #eaeaea;
+  }
+  
