@@ -1,3 +1,37 @@
+Pocket_2/
+├── app/
+│   ├── main.py                   # FastAPI backend code
+│   └── send_email.py			   # function to send email
+│   ├── templates/
+│   │   ├── index.html            # Homepage template
+│   │   └── create_trip.html      # Trip planner template
+│   └── static/
+│       ├── css/
+│       │   └── styles.css        # Global CSS styles
+│       └── js/
+│           ├── header.js         # Header functionality
+│           ├── footer.js         # Footer functionality
+│           ├── index.js          # Homepage (hero & marquee) scripts
+│           ├── create_trip.js    # Trip planner page scripts
+│           └── ui/               # Shared UI components (vanilla JS functions)
+│               ├── button.js     # Button helper/component
+│               ├── input.js      # Input helper/component
+│               ├── dialog.js     # Dialog/modal helper/component
+│               └── marquee.js    # Marquee effect helper
+├── requirements.txt              # Python dependencies (fastapi, uvicorn, Jinja2)
+└── README.md
+
+
+
+
+
+
+
+
+
+
+
+
 Pocket/
 ├── app/
 │   ├── main.py
