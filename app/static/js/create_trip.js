@@ -192,7 +192,7 @@
   Object.assign(voiceContainer.style, {
     position: 'fixed',
     left: '150px', // Move to left side
-    top: '40%', // Center vertically
+    top: '60%', // Center vertically
     transform: 'translateY(-50%)', // Adjust to true center
     zIndex: '1000',
     display: 'flex',
