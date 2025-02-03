@@ -10,8 +10,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
-from send_email import send_email_with_attachment, create_email_body  # Import the email functions
-# from app.send_email import send_email_with_attachment, create_email_body
+# from send_email import send_email_with_attachment, create_email_body  # Import the email functions
+from app.send_email import send_email_with_attachment, create_email_body
 from dotenv import load_dotenv
 import os
 
