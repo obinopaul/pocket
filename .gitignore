@@ -2,3 +2,5 @@
 venv/
 env/
 *.env
+app/.env
+app/*.env
