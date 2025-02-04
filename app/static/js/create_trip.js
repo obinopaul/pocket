@@ -193,11 +193,12 @@
     position: 'fixed',
     left: '150px', // Move to left side
     top: '60%', // Center vertically
-    transform: 'translateY(-50%)', // Adjust to true center
+    // transform: 'translateY(-50%)', // Adjust to true center
     zIndex: '1000',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center'
+    alignItems: 'center',
+    cursor: 'move' // Add cursor indication
   });
 
   // Microphone Label Container
@@ -210,31 +211,61 @@
     marginBottom: '15px',
     maxWidth: '200px',
     textAlign: 'center',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    cursor: 'move',
+    userSelect: 'none',
+    WebkitUserSelect: 'none'
   });
 
-// Microphone Label
-const micLabel = document.createElement('div');
-Object.assign(micLabel.style, {
-  color: '#003580',
-  fontWeight: 'bold',
-  fontSize: '1rem'
-});
-micLabel.textContent = 'Tell Us More about Your Trip';
+  // Microphone Label
+  const micLabel = document.createElement('div');
+  Object.assign(micLabel.style, {
+    color: '#003580',
+    fontWeight: 'bold',
+    fontSize: '1rem'
+  });
+  micLabel.textContent = 'Tell Us More about Your Trip';
 
 // Add label to container
 micLabelContainer.appendChild(micLabel);
 
-  // // Microphone Label
-  // const micLabel = document.createElement('div');
-  // Object.assign(micLabel.style, {
-  //   marginBottom: '10px',
-  //   color: '#003580',
-  //   fontWeight: 'bold',
-  //   fontSize: '1rem',
-  //   textAlign: 'center'
-  // });
-  // micLabel.textContent = 'Tell Us More about Your Trip';
+  // Drag functionality
+  let isDragging = false;
+  let initialX;
+  let initialY;
+  let initialLeft;
+  let initialTop;
+
+  const startDrag = (e) => {
+    isDragging = true;
+    initialX = e.clientX;
+    initialY = e.clientY;
+    const rect = voiceContainer.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', stopDrag);
+    e.preventDefault();
+  };
+  
+  const drag = (e) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - initialX;
+    const deltaY = e.clientY - initialY;
+    
+    voiceContainer.style.left = `${initialLeft + deltaX}px`;
+    voiceContainer.style.top = `${initialTop + deltaY}px`;
+  };
+  
+  const stopDrag = () => {
+    isDragging = false;
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', stopDrag);
+  };
+
+  // Add event listeners to mic label container
+  micLabelContainer.addEventListener('mousedown', startDrag);
 
   // Microphone Button
   const micBtn = document.createElement('button');
