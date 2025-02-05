@@ -11,7 +11,7 @@ SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")  # Replace with your actual Sen
 FROM_EMAIL = "paul.o.okafor-1@ou.edu"  # Replace with your email address
 
 
-def send_email_with_attachment(to_email, subject, body, file_path):
+def send_email_with_attachment(to_email, subject, body, webpage_url):
     """
     Send an email with an attachment using SendGrid.
 
@@ -29,27 +29,30 @@ def send_email_with_attachment(to_email, subject, body, file_path):
     to_email = To(to_email)
     content = Content("text/html", body)  # Set the email body as HTML for structured content
 
+    # Add a personalized link to the user's webpage
+    body += f'<p>You can view your full travel plan at the following link: <a href="{webpage_url}">{webpage_url}</a></p>'
+    
     # Prepare the email message
     mail = Mail(from_email, to_email, subject, content)
 
-    # Attach the document file
-    with open(file_path, "rb") as f:
-        attachment = Attachment()
-        attachment.content = b64encode(f.read()).decode()
-        attachment.type = "application/pdf"  # Modify based on your file type
-        attachment.filename = os.path.basename(file_path)
-        attachment.disposition = "attachment"
-        mail.add_attachment(attachment)
+    # # Attach the document file
+    # with open(file_path, "rb") as f:
+    #     attachment = Attachment()
+    #     attachment.content = b64encode(f.read()).decode()
+    #     attachment.type = "application/pdf"  # Modify based on your file type
+    #     attachment.filename = os.path.basename(file_path)
+    #     attachment.disposition = "attachment"
+    #     mail.add_attachment(attachment)
 
     # Send the email
     try:
         response = sg.send(mail)
-        print(f"Email sent successfully! Status code: {response.status_code}")
+        # print(f"Email sent successfully! Status code: {response.status_code}")
     except Exception as e:
         print(f"Error sending email: {e}")
 
 
-def create_email_body(origin, destination, dates, adults, children):
+def create_email_body(origin, destination, dates, adults, children, webpage_url):
     """
     Create a structured email body.
 
@@ -79,7 +82,7 @@ def create_email_body(origin, destination, dates, adults, children):
             <li><strong>Children:</strong> {children}</li>
         </ul>
 
-        <p>Your detailed itinerary document is attached. We hope you have an amazing trip!</p>
+        <p>You can view your full travel plan at the following link: <a href="{webpage_url}">{webpage_url}</a></p>
 
         <p>If you have any questions, feel free to reach out to us.</p>
 
