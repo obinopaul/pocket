@@ -27,3 +27,4 @@ arxiv
 needle-python
 openai
 reportlab
+aiohttp

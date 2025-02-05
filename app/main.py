@@ -15,7 +15,6 @@ from sendgrid.helpers.mail import Mail, Email, To, Content
 # from send_email import send_email_with_attachment, create_email_body  # Import the email functions
 from app.send_email import send_email_with_attachment, create_email_body
 from app.react_agent.pretty_print_2 import pretty_print_output
-from app.react_agent.travel_document import generate_travel_document
 from dotenv import load_dotenv
 import os
 import asyncio
