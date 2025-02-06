@@ -25,3 +25,4 @@ needle-python
 openai
 reportlab
 aiohttp
+ipython
