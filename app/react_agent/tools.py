@@ -43,7 +43,6 @@ from datetime import datetime
 import pyairbnb
 
 # from crewai_tools import BaseTool
-from amadeus import Client, ResponseError
 from typing import Optional
 from os import environ
 from langchain.tools import BaseTool, Tool
@@ -63,9 +62,6 @@ logger = logging.getLogger(__name__)
 
 #----------------------------------------------------------- Tools i have created -----------------------------------------------------------
 # Tavily Search: Performs web searches using the Tavily search engine, providing accurate and trusted results for general queries.
-# Amadeus Flight Search: Searches for flight availability and prices using the Amadeus API.
-# Amadeus Hotel Search: Searches for hotel availability and prices using the Amadeus API.
-# Geoapify Places Search: Searches for points of interest in a location using the Geoapify Places API.
 # Weather Search: Provides weather information for a given location and date using the OpenWeatherMap API.
 # Route Finder: Finds the optimal route between locations using the Google Maps API.
 # Flight Search: Provides flight information between two locations, including airlines, prices, departure/arrival times, and more.

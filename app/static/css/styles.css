@@ -355,12 +355,46 @@ textarea {
   z-index: 100;
 }
 
-/* Responsive Layout */
+/* Responsive Layout
 @media (min-width: 768px) {
   header, footer {
     padding: 1rem 3rem;
   }
+} */
+
+/* Responsive Layout (Mobile First) */
+@media (min-width: 768px) {
+  header, footer {
+    padding: 1rem 3rem;
+  }
+  /* Adjust card and input layout */
+  .card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .carousel-image {
+    width: 300px;
+  }
+
+  .dialog-content {
+    width: 80%;
+  }
+
+  .btn {
+    padding: 1rem 2rem;
+  }
 }
+
+/* Desktop and Larger Screens */
+@media (min-width: 1024px) {
+  /* Large desktop styles */
+  .card {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
 
 :root {
   /* For light mode, a darkish gray instead of pure black */

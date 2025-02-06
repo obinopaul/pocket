@@ -361,7 +361,7 @@ def flights_router(
 
 async def flight_finder_tool_node(state: OverallState) -> OverallState:
     """
-    A Tool Node that calls both Amadeus and Google Flights tools in parallel
+    A Tool Node that calls Google Flights tools in parallel
     and stores the results in the `flights` state variable.
     """
     # Extract inputs from the state

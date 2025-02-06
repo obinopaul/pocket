@@ -4,3 +4,4 @@ env/
 *.env
 app/.env
 app/*.env
+.vercel
