@@ -21,7 +21,6 @@ from langchain_core.prompts import MessagesPlaceholder
 from langchain.agents import create_react_agent, AgentExecutor
 from langgraph.prebuilt import ToolNode
 from typing import Dict, List, Literal, Any
-import ipywidgets as widgets
 from IPython.display import display
 from app.react_agent.state import OverallState
 import os 
