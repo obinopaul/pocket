@@ -72,7 +72,7 @@ def send_email_with_attachment(to_email, subject, body, file_path):
         print("Error sending email:", e)
 
 
-
+# SendAPI has been blocked. I will get another one during the deployment.
 
 def create_email_body(origin, destination, dates, adults, children):
     """
