@@ -363,11 +363,12 @@ textarea {
 } */
 
 /* Responsive Layout (Mobile First) */
-@media (min-width: 768px) {
+/*
+ @media (min-width: 768px) {
   header, footer {
     padding: 1rem 3rem;
   }
-  /* Adjust card and input layout */
+  Adjust card and input layout 
   .card {
     display: flex;
     flex-direction: column;
@@ -385,6 +386,74 @@ textarea {
     padding: 1rem 2rem;
   }
 }
+*/
+
+/* Responsive Layout (Mobile First) */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+
+  header, footer {
+    padding: 1rem;
+    text-align: center;
+  }
+
+  /* Adjust hero section */
+  #hero-section {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    text-align: center;
+  }
+
+  /* Ensure buttons stack vertically */
+  .btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+
+  /* Ensure form inputs take full width */
+  input, textarea, select {
+    width: 100%;
+    font-size: 1rem;
+  }
+
+  /* Adjust the trip planner form */
+  .container {
+    width: 95%;
+    padding: 1rem;
+  }
+
+  /* Adjust input grid to single column */
+  #trip-planner div {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Ensure marquee images fit well */
+  .carousel-image {
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Adjustments for tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    width: 85%;
+  }
+
+  .btn {
+    font-size: 1rem;
+    padding: 1rem;
+  }
+}
 
 /* Desktop and Larger Screens */
 @media (min-width: 1024px) {
@@ -393,6 +462,12 @@ textarea {
     display: flex;
     justify-content: space-between;
   }
+}
+
+/* Added this right now */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 
@@ -437,4 +512,66 @@ html, body {
 html::-webkit-scrollbar, 
 body::-webkit-scrollbar {
   display: none !important;
+}
+
+
+/* Table Styles */
+.travel-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.table-container {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover {
+  background-color: #f9f9f9;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Specific Table Styles */
+.accommodation-table td:nth-child(2) { /* Name column */
+  min-width: 250px;
+}
+
+.events-table td:nth-child(2) { /* Event name */
+  min-width: 200px;
+}
+
+.recommendations-table td:nth-child(3) { /* Information column */
+  line-height: 1.6;
+  max-width: 600px;
 }

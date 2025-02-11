@@ -100,107 +100,315 @@ class TravelItinerary(BaseModel):
     accommodation_options: Optional[Literal["Hotel", "Airbnb"]] = Field(description="The type of accommodation chosen by the user.")
     sort_by: Optional[str] = Field(description="The sorting criteria of flight chosen by the user (e.g., price, duration, departure, arrival).")
     
-async def travel_itinerary_planner(state: InputState) -> OverallState:
+    
+# async def travel_itinerary_planner(state: OverallState) -> OverallState:
+#     """
+#     Extracts travel itinerary details from user input.
+#     Uses DeepSeek LLM first, and switches to GPT-4o if DeepSeek fails.
+#     If both fail, retries once more before returning a fallback response.
+#     """
+
+#     print("Initializing LLMs...")
+#     llm_deepseek, llm_openai = await initialize_llm()
+    
+#     # async def create_chain(llm):
+#     #     """Creates a prompt processing chain for the given LLM."""
+#     #     return PromptTemplate(
+#     #         template="""You are a travel itinerary planner. Your task is to extract relevant information from the user's query to plan a trip.
+#     #                     Here is the user's query: {query}
+#     #                     Extract the following information:
+#     #                     - Location (starting point)
+#     #                     - loc_code (an uppercase 3-letter airport code of the starting point, use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
+#     #                     - destination
+#     #                     - dest_code (an uppercase 3-letter airport code of the destination. use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
+#     #                     - travel_class (0: Not Specified, 1: Economy, 2: Premium Economy, 3: Business, 4: First). the travel class specified by the user, else 0 if not specified. This should be numeric values mapped to the corresponding travel class names.
+#     #                     - Start date
+#     #                     - End date
+#     #                     - Number of adults
+#     #                     - Number of children
+#     #                     - User preferences
+#     #                     - Accommodation options (Hotel or Airbnb). If the user does not specify, use the default value "Hotel".
+#     #                     - sort_by - Sorting criteria for flights. Default is "price". Determine the sorting criteria based on the user's query:
+#     #                                 - If the user is looking for the cheapest flights, set sort_by to "price".
+#     #                                 - If the user is looking for the shortest flights, set sort_by to "duration".
+#     #                                 - If the user is looking for the earliest flight that leaves the airport, set sort_by to "departure".
+#     #                                 - If the user is looking for the earliest flight that arrives at the destination, set sort_by to "arrival".
+#     #                                 - If the user does not specify any preference, or if the query does not indicate urgency, set sort_by to "price".
+                                    
+#     #                     If any information is missing, leave it as None. The year will always be 2025, unless specified otherwise by the user query.
+#     #                     The default number of adults is 1, and the default number of children is 0. If the user does not specify the number of adults or children, use the default values.
+                        
+#     #                     For example, if the user query is "I want to travel from New York to Los Angeles on July 1st, 2022, with a budget of $5000 for 2 adults and 1 child, and return on July 20th, 2022. I plan to stay in a hotel." you should extract the following information:
+#     #                     - Location: New York
+#     #                     - loc_code: JFK
+#     #                     - Destination: Los Angeles
+#     #                     - dest_code: LAX
+#     #                     - travel_class: 0
+#     #                     - Start date: 2022-07-01
+#     #                     - End date: 2022-07-20
+#     #                     - Number of adults: 2
+#     #                     - Number of children: 1
+#     #                     - User preferences: {{ "budget": "$5000"}}
+#     #                     - Accommodation options: Hotel
+#     #                     - sort_by: price
+
+#     #                     Example 2:
+#     #                     User query: "I'm planning a luxury honeymoon trip from London to Tokyo in December 12, 2025 via Gatwick Its a five day trip with my husband and We'd like to fly first class with a budget of $15,000, staying in a high-end hotel. We want private airport transfers and dietary accommodations for a vegetarian diet, and we would like our flights to leave early. Activities should include cultural tours, fine dining, and shopping. There will be 2 adults, no children, and we need 1 suite."
+#     #                     Extracted information:
+#     #                     - Location: London
+#     #                     - loc_code: LGW
+#     #                     - Destination: Tokyo
+#     #                     - dest_code: HND
+#     #                     - travel_class: 4
+#     #                     - Start date: 2025-12-12
+#     #                     - End date: 2025-12-17
+#     #                     - Number of adults: 2
+#     #                     - Number of children: 0
+#     #                     - User preferences: {{ "trip_type": "Luxury", "budget": "$15,000", "transportation": "Private transfer", "diet": "Vegetarian", "activities": ["Cultural tours", "Fine dining", "Shopping"] }}
+#     #                     - Accommodation options: Hotel
+#     #                     - sort_by: departure
+#     #                     """,
+#     #         input_variables=["query"]
+#     #     ) | llm.with_structured_output(TravelItinerary)
+
+#     def create_chain(llm):
+#         """Creates an asynchronous processing chain for the given LLM."""
+        # return ChatPromptTemplate.from_messages(
+        #     [
+        #         ("system", """You are a travel itinerary planner. Your task is to extract relevant information from the user's query to plan a trip.
+        #                 Extract the following information:
+        #                 - Location (starting point)
+        #                 - loc_code (an uppercase 3-letter airport code of the starting point, use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
+        #                 - destination
+        #                 - dest_code (an uppercase 3-letter airport code of the destination. use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
+        #                 - travel_class (0: Not Specified, 1: Economy, 2: Premium Economy, 3: Business, 4: First). the travel class specified by the user, else 0 if not specified. This should be numeric values mapped to the corresponding travel class names.
+        #                 - Start date
+        #                 - End date
+        #                 - Number of adults
+        #                 - Number of children
+        #                 - User preferences
+        #                 - Accommodation options (Hotel or Airbnb). If the user does not specify, use the default value "Hotel".
+        #                 - sort_by - Sorting criteria for flights. Default is "price". Determine the sorting criteria based on the user's query:
+        #                             - If the user is looking for the cheapest flights, set sort_by to "price".
+        #                             - If the user is looking for the shortest flights, set sort_by to "duration".
+        #                             - If the user is looking for the earliest flight that leaves the airport, set sort_by to "departure".
+        #                             - If the user is looking for the earliest flight that arrives at the destination, set sort_by to "arrival".
+        #                             - If the user does not specify any preference, or if the query does not indicate urgency, set sort_by to "price".
+                                    
+        #                 If any information is missing, leave it as None. The year will always be 2025, unless specified otherwise by the user query.
+        #                 The default number of adults is 1, and the default number of children is 0. If the user does not specify the number of adults or children, use the default values.
+                        
+        #                 For example, if the user query is "I want to travel from New York to Los Angeles on July 1st, 2022, with a budget of $5000 for 2 adults and 1 child, and return on July 20th, 2022. I plan to stay in a hotel." you should extract the following information:
+        #                 - Location: New York
+        #                 - loc_code: JFK
+        #                 - Destination: Los Angeles
+        #                 - dest_code: LAX
+        #                 - travel_class: 0
+        #                 - Start date: 2022-07-01
+        #                 - End date: 2022-07-20
+        #                 - Number of adults: 2
+        #                 - Number of children: 1
+        #                 - User preferences: {{ "budget": "$5000"}}
+        #                 - Accommodation options: Hotel
+        #                 - sort_by: price
+
+        #                 Example 2:
+        #                 User query: "I'm planning a luxury honeymoon trip from London to Tokyo in December 12, 2025 via Gatwick Its a five day trip with my husband and We'd like to fly first class with a budget of $15,000, staying in a high-end hotel. We want private airport transfers and dietary accommodations for a vegetarian diet, and we would like our flights to leave early. Activities should include cultural tours, fine dining, and shopping. There will be 2 adults, no children, and we need 1 suite."
+        #                 Extracted information:
+        #                 - Location: London
+        #                 - loc_code: LGW
+        #                 - Destination: Tokyo
+        #                 - dest_code: HND
+        #                 - travel_class: 4
+        #                 - Start date: 2025-12-12
+        #                 - End date: 2025-12-17
+        #                 - Number of adults: 2
+        #                 - Number of children: 0
+        #                 - User preferences: {{ "trip_type": "Luxury", "budget": "$15,000", "transportation": "Private transfer", "diet": "Vegetarian", "activities": ["Cultural tours", "Fine dining", "Shopping"] }}
+        #                 - Accommodation options: Hotel
+        #                 - sort_by: departure
+        #                 """),
+        #         ("user", "{query}"),
+        #     ]
+        # ) | llm.with_structured_output(TravelItinerary)
+        
+        
+#     llm = LangchainChatDeepSeek(
+#         api_key=os.getenv("OPENAI_API_KEY"),
+#         model="gpt-4o"
+#     )
+
+#     print("Creating chain...")
+#     # Start with DeepSeek
+#     chain = create_chain(llm)
+    
+#     messages = state.messages
+#     if not state.messages:
+#         raise ValueError("Error: No messages found in state.")
+    
+#     last_message = messages[-1].content if messages else "No query provided"
+#     print("Last message", last_message)
+    
+#     # print(f"result: {chain.invoke({'query': last_message})}")
+#     async def invoke_chain(chain):
+#         """Runs the chain and handles errors gracefully."""
+#         try:
+#             # structured_output = await chain.ainvoke({"query": last_message})
+#             structured_output = chain.invoke({"query": last_message})
+#             if structured_output is None:
+#                 raise ValueError("LLM returned None instead of a valid response.")
+#             return structured_output
+#         except Exception as e:
+#             # print(f"Error occurred with LLM: {e}")
+#             return None
+
+#     # **First Attempt (DeepSeek)**
+#     structured_output = await invoke_chain(chain)
+#     print("Structured output", structured_output)
+#     # **Switch to GPT-4o if DeepSeek Fails**
+#     if structured_output is None:
+#         chain = create_chain(llm_openai)
+#         structured_output = await invoke_chain(chain)
+
+#     # **Retry Once More if Both Fail**
+#     if structured_output is None:
+#         await asyncio.sleep(2)
+#         structured_output = await invoke_chain(chain)
+
+#     # Update the state with structured output
+#     updated_state = {
+#         "location": structured_output.location,
+#         "loc_code": structured_output.loc_code,
+#         "destination": structured_output.destination,
+#         "dest_code": structured_output.dest_code,
+#         "travel_class": structured_output.travel_class,
+#         "start_date": structured_output.start_date,
+#         "end_date": structured_output.end_date,
+#         "num_adults": structured_output.num_adults,
+#         "num_children": structured_output.num_children,
+#         "user_preferences": structured_output.user_preferences,
+#         "accommodation_options": structured_output.accommodation_options,
+#         "sort_by": structured_output.sort_by
+#     }
+
+#     return updated_state
+
+
+# Function to create the LLM processing chain
+def create_chain(llm):
+    """Creates an LLM chain for structured output."""
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", """You are a travel itinerary planner. Your task is to extract relevant information from the user's query to plan a trip.
+                    Extract the following information:
+                    - Location (starting point)
+                    - loc_code (an uppercase 3-letter airport code of the starting point, use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
+                    - destination
+                    - dest_code (an uppercase 3-letter airport code of the destination. use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
+                    - travel_class (0: Not Specified, 1: Economy, 2: Premium Economy, 3: Business, 4: First). the travel class specified by the user, else 0 if not specified. This should be numeric values mapped to the corresponding travel class names.
+                    - Start date
+                    - End date
+                    - Number of adults
+                    - Number of children
+                    - User preferences
+                    - Accommodation options (Hotel or Airbnb). If the user does not specify, use the default value "Hotel".
+                    - sort_by - Sorting criteria for flights. Default is "price". Determine the sorting criteria based on the user's query:
+                                - If the user is looking for the cheapest flights, set sort_by to "price".
+                                - If the user is looking for the shortest flights, set sort_by to "duration".
+                                - If the user is looking for the earliest flight that leaves the airport, set sort_by to "departure".
+                                - If the user is looking for the earliest flight that arrives at the destination, set sort_by to "arrival".
+                                - If the user does not specify any preference, or if the query does not indicate urgency, set sort_by to "price".
+                                
+                    If any information is missing, leave it as None. The year will always be 2025, unless specified otherwise by the user query.
+                    The default number of adults is 1, and the default number of children is 0. If the user does not specify the number of adults or children, use the default values.
+                    
+                    For example, if the user query is "I want to travel from New York to Los Angeles on July 1st, 2022, with a budget of $5000 for 2 adults and 1 child, and return on July 20th, 2022. I plan to stay in a hotel." you should extract the following information:
+                    - Location: New York
+                    - loc_code: JFK
+                    - Destination: Los Angeles
+                    - dest_code: LAX
+                    - travel_class: 0
+                    - Start date: 2022-07-01
+                    - End date: 2022-07-20
+                    - Number of adults: 2
+                    - Number of children: 1
+                    - User preferences: {{ "budget": "$5000"}}
+                    - Accommodation options: Hotel
+                    - sort_by: price
+
+                    Example 2:
+                    User query: "I'm planning a luxury honeymoon trip from London to Tokyo in December 12, 2025 via Gatwick Its a five day trip with my husband and We'd like to fly first class with a budget of $15,000, staying in a high-end hotel. We want private airport transfers and dietary accommodations for a vegetarian diet, and we would like our flights to leave early. Activities should include cultural tours, fine dining, and shopping. There will be 2 adults, no children, and we need 1 suite."
+                    Extracted information:
+                    - Location: London
+                    - loc_code: LGW
+                    - Destination: Tokyo
+                    - dest_code: HND
+                    - travel_class: 4
+                    - Start date: 2025-12-12
+                    - End date: 2025-12-17
+                    - Number of adults: 2
+                    - Number of children: 0
+                    - User preferences: {{ "trip_type": "Luxury", "budget": "$15,000", "transportation": "Private transfer", "diet": "Vegetarian", "activities": ["Cultural tours", "Fine dining", "Shopping"] }}
+                    - Accommodation options: Hotel
+                    - sort_by: departure
+                    """),
+            ("user", "{query}"),
+        ]
+    ) | llm.with_structured_output(TravelItinerary)
+
+
+# Async function to process the user input
+async def travel_itinerary_planner(state: OverallState) -> OverallState:
     """
     Extracts travel itinerary details from user input.
     Uses DeepSeek LLM first, and switches to GPT-4o if DeepSeek fails.
     If both fail, retries once more before returning a fallback response.
     """
 
-
+    # print("Initializing LLMs...")
     llm_deepseek, llm_openai = await initialize_llm()
-    
-    def create_chain(llm):
-        """Creates a prompt processing chain for the given LLM."""
-        return PromptTemplate(
-            template="""You are a travel itinerary planner. Your task is to extract relevant information from the user's query to plan a trip.
-                        Here is the user's query: {query}
-                        Extract the following information:
-                        - Location (starting point)
-                        - loc_code (an uppercase 3-letter airport code of the starting point, use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
-                        - destination
-                        - dest_code (an uppercase 3-letter airport code of the destination. use the IATA airport codes, and if not available, use the city name. If there are multiple airports, choose the main one. Unless the user specifies a specific airport, use the city name.)
-                        - travel_class (0: Not Specified, 1: Economy, 2: Premium Economy, 3: Business, 4: First). the travel class specified by the user, else 0 if not specified. This should be numeric values mapped to the corresponding travel class names.
-                        - Start date
-                        - End date
-                        - Number of adults
-                        - Number of children
-                        - User preferences
-                        - Accommodation options (Hotel or Airbnb). If the user does not specify, use the default value "Hotel".
-                        - sort_by - Sorting criteria for flights. Default is "price". Determine the sorting criteria based on the user's query:
-                                    - If the user is looking for the cheapest flights, set sort_by to "price".
-                                    - If the user is looking for the shortest flights, set sort_by to "duration".
-                                    - If the user is looking for the earliest flight that leaves the airport, set sort_by to "departure".
-                                    - If the user is looking for the earliest flight that arrives at the destination, set sort_by to "arrival".
-                                    - If the user does not specify any preference, or if the query does not indicate urgency, set sort_by to "price".
-                                    
-                        If any information is missing, leave it as None. The year will always be 2025, unless specified otherwise by the user query.
-                        The default number of adults is 1, and the default number of children is 0. If the user does not specify the number of adults or children, use the default values.
-                        
-                        For example, if the user query is "I want to travel from New York to Los Angeles on July 1st, 2022, with a budget of $5000 for 2 adults and 1 child, and return on July 20th, 2022. I plan to stay in a hotel." you should extract the following information:
-                        - Location: New York
-                        - loc_code: JFK
-                        - Destination: Los Angeles
-                        - dest_code: LAX
-                        - travel_class: 0
-                        - Start date: 2022-07-01
-                        - End date: 2022-07-20
-                        - Number of adults: 2
-                        - Number of children: 1
-                        - User preferences: {{ "budget": "$5000"}}
-                        - Accommodation options: Hotel
-                        - sort_by: price
 
-                        Example 2:
-                        User query: "I'm planning a luxury honeymoon trip from London to Tokyo in December 12, 2025 via Gatwick Its a five day trip with my husband and We'd like to fly first class with a budget of $15,000, staying in a high-end hotel. We want private airport transfers and dietary accommodations for a vegetarian diet, and we would like our flights to leave early. Activities should include cultural tours, fine dining, and shopping. There will be 2 adults, no children, and we need 1 suite."
-                        Extracted information:
-                        - Location: London
-                        - loc_code: LGW
-                        - Destination: Tokyo
-                        - dest_code: HND
-                        - travel_class: 4
-                        - Start date: 2025-12-12
-                        - End date: 2025-12-17
-                        - Number of adults: 2
-                        - Number of children: 0
-                        - User preferences: {{ "trip_type": "Luxury", "budget": "$15,000", "transportation": "Private transfer", "diet": "Vegetarian", "activities": ["Cultural tours", "Fine dining", "Shopping"] }}
-                        - Accommodation options: Hotel
-                        - sort_by: departure
-                        """,
-            input_variables=["query"]
-        ) | llm.with_structured_output(TravelItinerary)
+    # Validate state messages
+    if not state.messages:
+        raise ValueError("Error: No messages found in state.")
 
-    # Start with DeepSeek
-    chain = create_chain(llm_openai)
+    last_message = state.messages[-1].content if state.messages else "No query provided"
+    # print(f"DEBUG: Last message received -> {last_message}")
 
-    messages = state.messages
-    last_message = messages[-1].content if messages else "No query provided"
+    # Create chain
+    chain = create_chain(llm_deepseek)
 
+    # Function to invoke chain asynchronously
     async def invoke_chain(chain):
-        """Runs the chain and handles errors gracefully."""
+        """Runs the chain asynchronously and ensures it's truly async-compatible."""
         try:
-            structured_output = await chain.ainvoke({"query": last_message})
+            structured_output = await chain.ainvoke({"query": last_message})  # Async invocation
             if structured_output is None:
                 raise ValueError("LLM returned None instead of a valid response.")
             return structured_output
         except Exception as e:
-            # print(f"Error occurred with LLM: {e}")
+            # print(f"DEBUG: Error invoking async LLM: {e}")
             return None
 
     # **First Attempt (DeepSeek)**
     structured_output = await invoke_chain(chain)
+    # print("Structured output:", structured_output)
 
     # **Switch to GPT-4o if DeepSeek Fails**
     if structured_output is None:
+        # print("DEBUG: Switching to GPT-4o...")
         chain = create_chain(llm_openai)
         structured_output = await invoke_chain(chain)
 
     # **Retry Once More if Both Fail**
     if structured_output is None:
+        # print("DEBUG: Final Retry with GPT-4o...")
         await asyncio.sleep(2)
         structured_output = await invoke_chain(chain)
 
-    # Update the state with structured output
+    # print(f"DEBUG: LLM Extracted -> {structured_output}")
+
+    # **Update State and Return**
     updated_state = {
         "location": structured_output.location,
         "loc_code": structured_output.loc_code,
@@ -218,6 +426,8 @@ async def travel_itinerary_planner(state: InputState) -> OverallState:
 
     return updated_state
 
+
+
 #--------------------------------------------Flight Finder Node--------------------------------------------
 
 async def flight_finder_node(state: OverallState) -> OverallState:
@@ -225,6 +435,7 @@ async def flight_finder_node(state: OverallState) -> OverallState:
     A Node that calls the Google Flights tool to find flights based on the state inputs.
     The results are stored in the `state.flights` list.
     """
+    # print("Node Started Flight Node")
     # Extract inputs from the state
     departure_airport = state.loc_code
     arrival_airport = state.dest_code
@@ -477,11 +688,12 @@ async def airbnb_node(state: OverallState) -> OverallState:
     This node extracts accommodation details from the user's query in state.messages
     and returns a structured output that can be passed to the booking tool.
     """
+    # print("Node Started Airbnb Node")
     llm = LangchainChatDeepSeek(
-        api_key=os.getenv("OPENAI_API_KEY"),
+         api_key=os.getenv("OPENAI_API_KEY"),
         model="gpt-4o"
     )
-    
+
     llm_with_structure = llm.with_structured_output(AccommodationOutput)
 
     # Define the prompt template
@@ -557,7 +769,13 @@ async def accommodation_finder_node(state: OverallState) -> OverallState:
     This node extracts accommodation details from the user's query in state.messages
     and returns a structured output that can be passed to the booking tool.
     """
-    llm_deepseek, llm = await initialize_llm()
+    # print("Node Started Accommodation Node")
+    # llm_deepseek, llm = await initialize_llm()
+    
+    llm = LangchainChatDeepSeek(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model="gpt-4o"
+        )
     
     llm_with_structure = llm.with_structured_output(AccommodationOutput)
 
@@ -663,8 +881,14 @@ async def activities_node(state: OverallState) -> OverallState:
                 })
 
         return parsed_activities
-
-    llm_deepseek, llm = await initialize_llm()
+    
+    # print("Node Started Activities Node")
+    llm = LangchainChatDeepSeek(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model="gpt-4o"
+        )
+    
+    # llm_deepseek, llm = await initialize_llm()
     preferences = state.user_preferences
     query = state.messages[-1].content if state.messages else "No query provided"
     destination = state.dest_code  
@@ -701,7 +925,7 @@ async def activities_node(state: OverallState) -> OverallState:
             # print(f"Attempt {attempt + 1}: Agent output - {result.get('output', '')}")
             
             activities_output = result.get("output", "").strip()
-            print(f'Activities: {activities_output}')
+            # print(f'Activities: {activities_output}')
             # Explicit check for invalid responses
             if not activities_output or activities_output in ["No generation chunks were returned", ""]:
                 raise ValueError("Invalid or empty response from agent.")
@@ -799,7 +1023,12 @@ async def ticketmaster_node(state: OverallState) -> OverallState:
     generates a list of keywords based on the location and preferences,
     and searches for events using the Ticketmaster API.
     """
-    llm_deepseek, llm = await initialize_llm()
+    # llm_deepseek, llm = await initialize_llm()
+    # print("Node Started TicketMaster Node")
+    llm = LangchainChatDeepSeek(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model="gpt-4o"
+        )
     llm_with_structure = llm.with_structured_output(TicketmasterOutput)
 
     # Define the prompt template
@@ -898,7 +1127,79 @@ async def ticketmaster_node(state: OverallState) -> OverallState:
 # the use LLM to interpret the weather forecast,
 # and return the interpretation as a string
 
-async def recommendations_node(state: OverallState) -> OverallState:
+
+
+class Recommendations(BaseModel):
+    recommendations: Optional[List[Dict[str, str]]] = Field(description="The user's current location or starting point.")
+
+async def recommendations_node(state):
+    # Ensure you have OpenAI API key set up
+    # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = OpenAI(
+        api_key = os.getenv("OPENAI_API_KEY")
+        )
+    
+    all_messages = "\n".join([message.content for message in state.messages])
+    preferences_text = "\n".join([f"{key}: {value}" for key, value in state.user_preferences.items()])
+    query = f"{all_messages}\n\nUser Preferences:\n{preferences_text}"
+
+    try:
+        # Remove `await` from the `.create()` call
+        completion = client.chat.completions.create(
+            model="gpt-4o",  # Ensure this is a valid model
+            messages=[
+                {"role": "system", "content": RECOMMENDATION_PROMPT_2},
+                {"role": "user", "content": query},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "recommendation_schema",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "recommendations": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "key": {
+                                            "type": "string",
+                                            "description": "Short label for the recommendation"
+                                        },
+                                        "value": {
+                                            "type": "string",
+                                            "description": "Concise recommendation content"
+                                        }
+                                    },
+                                    "required": ["key", "value"],
+                                    "additionalProperties": False
+                                },
+                                "description": "A list of travel recommendations."
+                            }
+                        },
+                        "required": ["recommendations"],
+                        "additionalProperties": False
+                    }
+                },
+            },
+        )
+
+        structured_output = completion.choices[0].message.content
+        parsed_output = json.loads(structured_output)
+        recommendation_list = parsed_output["recommendations"]
+        transformed_list = [{item["key"]: item["value"]} for item in recommendation_list]
+
+        state.recommendations = transformed_list
+        return state
+
+    except Exception as e:
+        # print(f"Error occurred: {e}")
+        return {"error": "Failed to generate recommendations."}
+    
+    
+    
+async def recommendations_node_2(state: OverallState) -> OverallState:
     """
     This node uses a React agent to find crucial travel advice and insights for the user.
     """
@@ -992,7 +1293,13 @@ async def recommendations_node(state: OverallState) -> OverallState:
         state.messages.append(AIMessage(content="Please provide a destination or query."))
         return state
 
-    llm_deepseek, llm = await initialize_llm()
+    # llm_deepseek, llm = await initialize_llm()
+    # print("Node Started Recommendations Node")
+    llm = LangchainChatDeepSeek(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model="gpt-4o"
+        )
+    
     query = state.messages[0].content  
     
     # Create the React agent prompt
@@ -1047,73 +1354,6 @@ async def recommendations_node(state: OverallState) -> OverallState:
         
     }
 
-
-
-class Recommendations(BaseModel):
-    recommendations: Optional[List[Dict[str, str]]] = Field(description="The user's current location or starting point.")
-
-async def recommendations_node_2(state):
-    # Ensure you have OpenAI API key set up
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-    all_messages = "\n".join([message.content for message in state.messages])
-    preferences_text = "\n".join([f"{key}: {value}" for key, value in state.user_preferences.items()])
-    query = f"{all_messages}\n\nUser Preferences:\n{preferences_text}"
-
-    try:
-        # Remove `await` from the `.create()` call
-        completion = client.chat.completions.create(
-            model="gpt-4o",  # Ensure this is a valid model
-            messages=[
-                {"role": "system", "content": RECOMMENDATION_PROMPT_2},
-                {"role": "user", "content": query},
-            ],
-            response_format={
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "recommendation_schema",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "recommendations": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "key": {
-                                            "type": "string",
-                                            "description": "Short label for the recommendation"
-                                        },
-                                        "value": {
-                                            "type": "string",
-                                            "description": "Concise recommendation content"
-                                        }
-                                    },
-                                    "required": ["key", "value"],
-                                    "additionalProperties": False
-                                },
-                                "description": "A list of travel recommendations."
-                            }
-                        },
-                        "required": ["recommendations"],
-                        "additionalProperties": False
-                    }
-                },
-            },
-        )
-
-        structured_output = completion.choices[0].message.content
-        parsed_output = json.loads(structured_output)
-        recommendation_list = parsed_output["recommendations"]
-        transformed_list = [{item["key"]: item["value"]} for item in recommendation_list]
-
-        state.recommendations = transformed_list
-        return state
-
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        return {"error": "Failed to generate recommendations."}
-    
 
 
 def recommendation_router(

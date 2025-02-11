@@ -62,4 +62,28 @@
   headerEl.style.padding = '1rem';
   headerEl.appendChild(leftContainer);
   headerEl.appendChild(toggleBtn);
+
+
+  // ----------------------------- Responsive Adjustments ----------------------------- //
+  // Responsive Adjustments
+  function adjustHeader() {
+    if (window.innerWidth <= 768) {
+      headerEl.style.flexDirection = 'column';
+      headerEl.style.textAlign = 'center';
+      leftContainer.style.justifyContent = 'center';
+      leftContainer.style.flexDirection = 'column';
+      toggleBtn.style.margin = '1rem 0';
+    } else {
+      headerEl.style.flexDirection = 'row';
+      leftContainer.style.flexDirection = 'row';
+      toggleBtn.style.marginLeft = 'auto';
+    }
+  }
+
+  // Run on page load
+  adjustHeader();
+
+  // Listen for window resize
+  window.addEventListener('resize', adjustHeader);
+  // ---------------------------------------------------------------------------------------------------
 })();

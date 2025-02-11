@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Specify the character encoding -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PocketTraveller</title>
-  <!-- Favicon -->
   <link rel="icon" href="/static/images/logo.png" type="image/png">
   <link rel="stylesheet" href="/static/css/satoshi.css">
   <link rel="stylesheet" href="/static/css/styles.css">
@@ -16,20 +14,21 @@
 </head>
 <body>
   <header id="site-header"></header>
-
-  <!-- Main Content -->
   <main class="container">
       <h1>Your Personalized Travel Plan</h1>
-
-      <!-- Inject the dynamic content (all_tables) here -->
-      <div id="travel-plan" style="font-size: 1.5rem; color: black; margin-bottom: 20px;">
-          {{ travel_plan }}  <!-- This is where all_tables will be inserted -->
+      
+      <div id="travel-plan">
+        {{ overview|safe }}
+        {{ flights|safe }}
+        {{ accommodations|safe }}
+        {{ activities|safe }}
+        {{ events|safe }}
+        {{ recommendations|safe }}
       </div>
-  </main>
 
+  </main>
   <footer id="site-footer"></footer>
   
-  <!-- Include UI scripts -->
   <script src="/static/js/header.js"></script>
   <script src="/static/js/ui/marquee.js"></script>
   <script src="/static/js/footer.js"></script>

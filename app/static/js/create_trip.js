@@ -1,3 +1,4 @@
+
 (function renderTripPlanner() {
   const plannerEl = document.getElementById('trip-planner');
 
@@ -107,6 +108,7 @@
   const dateInput = document.createElement('input');
   dateInput.id = 'date-range';
   dateInput.placeholder = 'Select date range...';
+  dateInput.readOnly = true; // Force users to use the picker so that flatpickr.selectedDates is always updated
   dateInput.style.width = '100%';
   dateInput.style.padding = '0.8rem';
   dateInput.style.border = '2px solid orange'; // Thicker border
@@ -403,43 +405,128 @@ micLabelContainer.appendChild(micLabel);
       transition: 'background-color 0.3s'
   });
 
-  submitBtn.addEventListener('click', () => {
-    const formData = {
-      origin: document.getElementById('origin').value,
-      destination: document.getElementById('destination').value,
-      dates: flatpickrInstance.selectedDates.map(date => date.toISOString().split('T')[0]), // Convert dates to ISO strings,
-      adults: document.getElementById('adults').value,
-      children: document.getElementById('children').value,
-      email: document.getElementById('email').value,
-      voiceNotes: transcriptBox.value
-    };
+  // --------------------------------------------------------------------------------------------------------------------
+  // // THIS IS SYNCHRNOUS CODE
+  // submitBtn.addEventListener('click', () => {
+  //   const formData = {
+  //     origin: document.getElementById('origin').value,
+  //     destination: document.getElementById('destination').value,
+  //     dates: flatpickrInstance.selectedDates.map(date => date.toISOString().split('T')[0]), // Convert dates to ISO strings,
+  //     adults: document.getElementById('adults').value,
+  //     children: document.getElementById('children').value,
+  //     email: document.getElementById('email').value,
+  //     voiceNotes: transcriptBox.value
+  //   };
   
-    // Check if required fields are filled
-    if (!formData.origin || !formData.destination || !formData.dates.length || !formData.adults || !formData.email) {
+  //   // Check if required fields are filled
+  //   if (!formData.origin || !formData.destination || !formData.dates.length || !formData.adults || !formData.email) {
+  //     alert('Please fill in all required fields before submitting.');
+  //     return;
+  //   }
+
+  //   // Send data to FastAPI using fetch
+  //   fetch('/submit-trip', {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify(formData)  // Send data as JSON to backend
+  //   })
+  //   .then(response => {
+  //     if (!response.ok) {
+  //       return response.json().then(err => { 
+  //         throw new Error(err.message || 'Submission failed'); 
+  //       });
+  //     }
+  //     return response.json(); // Return the raw response if you don't need JSON
+  //   })
+
+  //   .then(data => {
+  //     console.log('Response from backend:', data);
+  //     if (data.success) {
+  //       window.location.href = '/thank-you'; // Redirect on success
+  //     } else {
+  //       console.error('Unexpected response structure:', data);
+  //       // Handle unexpected data structure here
+  //     }
+  //     // window.location.href = '/thank-you'; // Redirect to thank-you page
+  //   })
+  //   .catch(error => {
+  //     console.error('Error message:', error.message);
+  //     // Only show an alert if the error is submission-related
+  //     // if (error.message !== 'Please fill in all required fields before submitting.') {
+  //     //   alert('There was an error submitting your form. Please try again.');
+  //     // }
+      
+  //     // Show alert only if the error is not related to required fields
+  //     if (error.message === 'Please fill in all required fields before submitting.') {
+  //       alert(error.message);
+  //     }
+  //   });
+  // });
+
+  // --------------------------------------------------------------------------------------------------------------------
+  // THIS IS ASYNCHRONOUS CODE
+  submitBtn.addEventListener('click', async () => {
+    // Gather form data
+    const formData = {
+      origin: document.getElementById('origin').value.trim(),
+      destination: document.getElementById('destination').value.trim(),
+      dates: flatpickrInstance.selectedDates.map(date => date.toISOString().split('T')[0]),
+      adults: document.getElementById('adults').value.trim(),
+      children: document.getElementById('children').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      voiceNotes: transcriptBox.value.trim()
+    };
+
+    // Validate required fields
+    if (
+      !formData.origin ||
+      !formData.destination ||
+      !document.getElementById('date-range').value.trim() ||
+      !formData.adults ||
+      !formData.email
+    ) {
       alert('Please fill in all required fields before submitting.');
       return;
     }
-  
-    // Send data to FastAPI using fetch
-    fetch('/submit-trip', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData)  // Send data as JSON to backend
-    })
-    .then(response => response.json())  // Expecting JSON response from backend
-    .then(data => {
+
+    // Redirect immediately
+    window.location.href = '/thank-you';
+
+    try {
+      const response = await fetch('/submit-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || 'Submission failed');
+      }
+
+      const data = await response.json();
       console.log('Response from backend:', data);
-      window.location.href = '/thank-you';  // Redirect to thank-you page
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('There was an error submitting your form. Please try again.');
-    });
-    
+      // window.location.href = '/thank-you';
+      // Assuming the backend returns a success flag, adjust as needed.
+      // if (data.success) {
+      //   window.location.href = '/thank-you';
+      // } else {
+      //   console.error('Unexpected response:', data);
+      //   // Optionally handle unexpected response structure here.
+      // }
+    } catch (error) {
+      console.error('Error:', error.message);
+      // Only alert if the error is due to missing required fields.
+      if (error.message === 'Please fill in all required fields before submitting.') {
+        alert(error.message);
+      }
+      // Other errors (network, server errors, etc.) are logged for debugging.
+    }
   });
-  
 
   form.appendChild(submitBtn);
   container.appendChild(form);
@@ -470,4 +557,23 @@ micLabelContainer.appendChild(micLabel);
     new google.maps.places.Autocomplete(destInput, { types: ['(cities)'] });
   }
   window.initAutocomplete = initAutocomplete;
+
+
+  // ---------------------------------------------- Added for Mobile Screens ----------------------------------------------
+  function adjustTripPlannerForMobile() {
+    if (window.innerWidth <= 768) {
+      container.style.width = '95%';
+      container.style.padding = '1rem';
+      inputGrid.style.gridTemplateColumns = '1fr'; // Stack inputs
+    } else {
+      container.style.width = '80%';
+      container.style.padding = '2rem';
+      inputGrid.style.gridTemplateColumns = 'repeat(4, 1fr)'; // Restore grid
+    }
+  }
+
+  adjustTripPlannerForMobile();
+  window.addEventListener("resize", adjustTripPlannerForMobile);
+  // ---------------------------------------------------------------------------------------------------------------
+
 })();

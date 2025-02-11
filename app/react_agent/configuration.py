@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig, ensure_config
 from app.react_agent import prompts
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Configuration:
     """The configuration for the agent."""
 

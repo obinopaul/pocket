@@ -96,4 +96,27 @@
   });
 
   footerEl.appendChild(socialContainer);
+
+
+  // --------------------------------------- Responsive Adjustments ---------------------------------------
+  // Responsive Adjustments
+  function adjustFooter() {
+    if (window.innerWidth <= 768) {
+      footerEl.style.flexDirection = 'column';
+      footerEl.style.textAlign = 'center';
+      socialContainer.style.flexDirection = 'column';
+      socialContainer.style.gap = '0.5rem';
+    } else {
+      footerEl.style.flexDirection = 'row';
+      socialContainer.style.flexDirection = 'row';
+    }
+  }
+
+  // Run on page load
+  adjustFooter();
+
+  // Listen for window resize
+  window.addEventListener('resize', adjustFooter);
+
+  // -------------------------------------------------------------------------------------------------------------
 })();

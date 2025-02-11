@@ -26,4 +26,6 @@ openai
 reportlab
 aiohttp
 ipython
-primp
+primp==0.11.0
+python-docx 
+docx2pdf

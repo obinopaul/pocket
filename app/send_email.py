@@ -1,5 +1,6 @@
 import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment
+from sendgrid.helpers.mail import Email, To, Content
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 from base64 import b64encode
 import os
 import dotenv
@@ -11,86 +12,106 @@ SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")  # Replace with your actual Sen
 FROM_EMAIL = "paul.o.okafor-1@ou.edu"  # Replace with your email address
 
 
-def send_email_with_attachment(to_email, subject, body, webpage_url):
+def send_email_with_attachment(to_email, subject, body, file_path):
     """
-    Send an email with an attachment using SendGrid.
-
+    Send an email with a PDF attachment using SendGrid.
+    
     Args:
         to_email (str): The recipient's email address.
         subject (str): The subject of the email.
-        body (str): The body text of the email.
-        file_path (str): The file path to the document to be attached.
+        body (str): The HTML body of the email.
+        file_path (str): The path to the PDF file to attach.
     """
-    # Create a SendGrid client
-    sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
-
-    # Create the email components
-    from_email = Email(FROM_EMAIL)
-    to_email = To(to_email)
-    content = Content("text/html", body)  # Set the email body as HTML for structured content
-
-    # Add a personalized link to the user's webpage
-    body += f'<p>You can view your full travel plan at the following link: <a href="{webpage_url}">{webpage_url}</a></p>'
     
-    # Prepare the email message
-    mail = Mail(from_email, to_email, subject, content)
-
-    # # Attach the document file
-    # with open(file_path, "rb") as f:
-    #     attachment = Attachment()
-    #     attachment.content = b64encode(f.read()).decode()
-    #     attachment.type = "application/pdf"  # Modify based on your file type
-    #     attachment.filename = os.path.basename(file_path)
-    #     attachment.disposition = "attachment"
-    #     mail.add_attachment(attachment)
-
-    # Send the email
     try:
-        response = sg.send(mail)
-        # print(f"Email sent successfully! Status code: {response.status_code}")
+        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print("Error initializing SendGrid client:", e)
+        return
+
+    try:
+        # Use plain strings for from_email and to_emails.
+        message = Mail(
+            from_email=FROM_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            html_content=body
+        )
+    except Exception as e:
+        print("Error creating the Mail object:", e)
+        return
+
+    try:
+        with open(file_path, "rb") as f:
+            file_data = f.read()
+        if not file_data:
+            print("Attachment file is empty!")
+            return
+        encoded_file = b64encode(file_data).decode()
+    except Exception as e:
+        print(f"Error reading attachment file: {e}")
+        return
+
+    try:
+        # Create the attachment using the new helper classes
+        attachment = Attachment(
+            FileContent(encoded_file),
+            FileName(os.path.basename(file_path)),
+            FileType("application/pdf"),
+            Disposition("attachment")
+        )
+        # Attach the file to the message
+        message.attachment = attachment
+    except Exception as e:
+        print("Error creating or adding attachment:", e)
+        return
+
+    try:
+        response = sg.send(message)
+    except Exception as e:
+        print("Error sending email:", e)
 
 
-def create_email_body(origin, destination, dates, adults, children, webpage_url):
+
+
+def create_email_body(origin, destination, dates, adults, children):
     """
-    Create a structured email body.
-
+    Create a structured HTML email body with trip details.
+    
     Args:
         origin (str): The origin of the trip.
         destination (str): The destination of the trip.
-        dates (str): The travel dates.
+        dates (list[str]): The travel dates.
         adults (int): The number of adults.
         children (int): The number of children.
-
+        
     Returns:
         str: The structured HTML body for the email.
     """
     body = f"""
     <html>
-    <body>
+      <body>
         <h1>Pocket Travel - Your Trip Plan</h1>
         <p>Hi there,</p>
-        <p>We are excited to present your travel plan. Below are the details of your trip:</p>
+        <p>We are excited to present your travel plan. Please find the PDF attached to this email.</p>
         
         <h3>Trip Details:</h3>
         <ul>
-            <li><strong>Origin:</strong> {origin}</li>
-            <li><strong>Destination:</strong> {destination}</li>
-            <li><strong>Travel Dates:</strong> {dates}</li>
-            <li><strong>Adults:</strong> {adults}</li>
-            <li><strong>Children:</strong> {children}</li>
+          <li><strong>Origin:</strong> {origin}</li>
+          <li><strong>Destination:</strong> {destination}</li>
+          <li><strong>Travel Dates:</strong> {', '.join(dates)}</li>
+          <li><strong>Adults:</strong> {adults}</li>
+          <li><strong>Children:</strong> {children}</li>
         </ul>
-
-        <p>You can view your full travel plan at the following link: <a href="{webpage_url}">{webpage_url}</a></p>
-
+        
         <p>If you have any questions, feel free to reach out to us.</p>
-
+        
         <footer>
-            <p>Best regards,</p>
-            <p>The Pocket Travel Team</p>
+          <p>Best regards,</p>
+          <p>The Pocket Travel Team</p>
         </footer>
-    </body>
+      </body>
     </html>
     """
     return body
+

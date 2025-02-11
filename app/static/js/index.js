@@ -369,4 +369,21 @@ const secondRow = images.slice(half);
   marqueeWrapper.appendChild(rightOverlay);
 
   heroEl.appendChild(marqueeWrapper);
+
+
+  // ---------------------------------------------- Added for Mobile Screens ----------------------------------------------
+  // Adjust for Mobile Screens
+  function adjustHeroLayout() {
+    if (window.innerWidth <= 768) {
+      line1.style.fontSize = "2rem";
+      line2.style.fontSize = "2.5rem";
+      line3.style.fontSize = "1.2rem";
+      textContainer.style.textAlign = "center";
+    }
+  }
+
+  adjustHeroLayout();
+  window.addEventListener("resize", adjustHeroLayout);
+
+// ---------------------------------------------------------------------------------------------------------------
 })();

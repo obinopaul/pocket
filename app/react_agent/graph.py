@@ -57,7 +57,7 @@ warnings.filterwarnings("ignore")
 # Define a new graph
 class PocketTraveller:
     def __init__(self):
-        self.builder = StateGraph(OverallState, input=InputState, config_schema=Configuration)
+        self.builder = StateGraph(OverallState)
         self._build_graph()
         self.graph = self.builder.compile()
         self.graph.name = "Travel Itinerary Planner"
@@ -89,7 +89,8 @@ class PocketTraveller:
         self.builder.add_edge("recommendation_node_2", END)
     
     async def invoke_graph(self, user_input):
-        input_state = {"messages": [HumanMessage(content=user_input)]}
+        # input_state = {"messages": [HumanMessage(content=user_input)]}
+        input_state = OverallState(messages=[HumanMessage(content=user_input)])  # Let the graph initialize OverallState
         return await self.graph.ainvoke(input_state, {"recursion_limit": 3000})
 
 # Example usage:

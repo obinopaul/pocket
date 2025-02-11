@@ -283,3 +283,5 @@ def format_flight_table(title, flights, ascii_table_func):
             class_tables.append(ascii_table_func(headers, rows, title=f"--- {title} ({class_name} Class) ---"))
             
     return "\n\n".join(class_tables)
+
+

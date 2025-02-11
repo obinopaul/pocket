@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import tempfile
 from jinja2 import Template
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -14,7 +15,7 @@ import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 # from send_email import send_email_with_attachment, create_email_body  # Import the email functions
 from app.send_email import send_email_with_attachment, create_email_body
-from app.react_agent.pretty_print_2 import pretty_print_output
+from app.react_agent.pretty import generate_docx
 from dotenv import load_dotenv
 import os
 import asyncio
@@ -68,65 +69,46 @@ class TripFormData(BaseModel):
 # Endpoint to handle form submission and send data to the LLM
 @app.post("/submit-trip")
 async def submit_trip(request: Request, data: TripFormData):
-    try:
-        user_input = {
-            "origin": data.origin,
-            "destination": data.destination,
-            "dates": data.dates,
-            "adults": data.adults,
-            "children": data.children,
-            "More Information": data.voiceNotes
-        }
 
-        # Convert user_input to string for the planner
-        user_input_string = json.dumps(user_input)
+    try:       
+        # Create a natural sentence introduction
+        user_input = (
+            f"I am looking to travel from {data.origin} to {data.destination}. "
+            f"I plan to travel on the following dates: {', '.join(data.dates)}. "
+            f"There will be {data.adults} adult(s) and {data.children} child(ren) traveling with me. "
+            f"My email address is {data.email}, and I have left the following extra information: {data.voiceNotes}."
+        )
         
         planner = PocketTraveller()
-        output = await planner.invoke_graph(user_input_string )
-        overview, flights, accommodations, activities, events, recommendations = pretty_print_output(output)
+        output = await planner.invoke_graph(user_input)
         
-        all_tables = "\n\n".join(filter(None, [
-            overview, flights, accommodations, activities, events, recommendations
-        ]))
-
-        # Load the template (results.html)
-        with open("app/templates/results.html", "r") as file:
-            template = Template(file.read())
-            
-        # Render the HTML content with the data (inject all_tables into the body)
-        rendered_html = template.render(
-            travel_plan=all_tables  # Inject the whole content into the body of the HTML
-        )
-    
         # Generate unique filename using UUID
         unique_id = uuid.uuid4().hex
         # document_filename = f"travel_plan_{unique_id}"
-        file_path = f"app/static/results/{unique_id}.html"
+        file_path = f"app/static/results/{unique_id}.pdf"
         
-        # Save the rendered HTML to a file
-        with open(file_path, "w") as file:
-            file.write(rendered_html)        
-
-        # Get the base URL dynamically from the request
-        base_url = str(request.base_url)  # This gives the base URL (e.g., http://127.0.0.1:8000/ or https://your-app.vercel.app/)
+        # Generate the DOCX in a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+            temp_docx_path = tmp.name
         
-        # Construct the full URL for the generated webpage
-        webpage_url = f"{base_url}static/results/{unique_id}.html"
+        generate_docx(output, temp_docx_path, file_path)
+        
+        # Remove the temporary DOCX file so that only the PDF remains
+        os.remove(temp_docx_path)
 
         email_body = create_email_body(
             data.origin, 
             data.destination, 
             data.dates, 
             data.adults, 
-            data.children,
-            webpage_url
+            data.children
         )
         
         send_email_with_attachment(
             to_email=data.email, 
             subject="Your Pocket Travel Plan", 
             body=email_body, 
-            webpage_url=webpage_url
+            file_path=file_path
         )
         
         return JSONResponse(content={"message": "Trip details received. An email will be sent shortly."})
