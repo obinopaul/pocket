@@ -4,6 +4,109 @@ from docx.shared import Pt, Inches
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 import docx.opc.constants
+import subprocess
+import os
+import shutil
+from docx2pdf import convert
+
+def convert_document(temp_docx_path, file_path):
+    try:
+        # Try using docx2pdf (only works on Windows)
+        convert(temp_docx_path, file_path)
+    except ImportError:
+        # print("docx2pdf is not installed. Falling back to LibreOffice...")
+        convert_docx_to_pdf_linux(temp_docx_path, file_path)
+    except Exception as e:
+        # print(f"docx2pdf failed: {e}. Falling back to LibreOffice...")
+        convert_docx_to_pdf_linux(temp_docx_path, file_path)
+
+
+# def convert_docx_to_pdf_linux(docx_path, pdf_path):
+#     """Convert a DOCX file to PDF using LibreOffice (Linux-friendly)."""
+#     try:
+#         print(f'current dir: {os.getcwd()}')
+#         print(f'Temp path: {docx_path}')
+#         print(f'PDF path: {pdf_path}')
+        
+#         # Ensure the output directory exists
+#         output_dir = os.path.dirname(pdf_path)
+#         print(f'output_dir: {output_dir}')
+#         os.makedirs(output_dir, exist_ok=True)
+
+#         # Ensure LibreOffice is installed
+#         if not shutil.which("soffice"):
+#             raise FileNotFoundError("LibreOffice (soffice) is not installed. Install it using 'sudo apt install libreoffice'.")
+
+#         # Run LibreOffice in headless mode to convert DOCX to PDF
+#         subprocess.run(
+#             ["soffice", "--headless", "--convert-to", "pdf", "--outdir", output_dir, docx_path],
+#             check=True
+#         )
+
+#         # Verify the output file exists
+#         if not os.path.exists(pdf_path):
+#             raise FileNotFoundError(f"PDF conversion failed: {pdf_path} not found.")
+
+#     except Exception as e:
+#         print(f"Error converting DOCX to PDF: {e}")
+
+
+def convert_docx_to_pdf_linux(docx_path, pdf_path):
+    """Convert a DOCX file to PDF using LibreOffice (Linux-friendly)."""
+    try:
+        # print(f'Current dir: {os.getcwd()}')
+        # print(f'Temp DOCX path: {docx_path}')
+        # print(f'Target PDF path: {pdf_path}')
+        
+        # Ensure the output directory exists
+        output_dir = os.path.dirname(pdf_path)
+        # print(f'Output dir: {output_dir}')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Get the base filename for the temporary PDF
+        temp_pdf_name = os.path.splitext(os.path.basename(docx_path))[0] + '.pdf'
+        temp_pdf_path = os.path.join(output_dir, temp_pdf_name)
+        
+        # Run LibreOffice conversion
+        cmd = [
+            "soffice",
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", output_dir,
+            docx_path
+        ]
+        # print(f'Running command: {" ".join(cmd)}')
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True
+        )
+        
+        # print("Command output:", result.stdout)
+        # print("Command errors:", result.stderr)
+        
+        # Check if the conversion was successful
+        if result.returncode != 0:
+            raise Exception(f"LibreOffice conversion failed with return code {result.returncode}")
+        
+        # Move the converted file to the target location if necessary
+        if os.path.exists(temp_pdf_path) and temp_pdf_path != pdf_path:
+            # print(f'Moving {temp_pdf_path} to {pdf_path}')
+            shutil.move(temp_pdf_path, pdf_path)
+        
+        # Final verification
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"PDF conversion failed: {pdf_path} not found")
+        
+        # print(f'Successfully created PDF at: {pdf_path}')
+        
+    except Exception as e:
+        # print(f"Error converting DOCX to PDF: {str(e)}")
+        # print(f"Current directory contents: {os.listdir('.')}")
+        # print(f"Output directory contents: {os.listdir(output_dir)}")
+        raise
+    
 
 def add_hyperlink(paragraph, text, url):
     """
@@ -348,14 +451,7 @@ def generate_docx(output, temp_docx_path, file_path):
     
     doc.add_paragraph("END OF RESULTS")
     doc.save(temp_docx_path)
-
-    try:
-        from docx2pdf import convert
-        convert(temp_docx_path, file_path)
-    except ImportError:
-        print("docx2pdf is not installed. Install it using pip install docx2pdf to convert to PDF.")
-    except Exception as e:
-        print(f"Error converting to PDF: {e}")
+    convert_document(temp_docx_path, file_path)
 
 
 if __name__ == "__main__":

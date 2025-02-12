@@ -92,8 +92,8 @@ class TravelItinerary(BaseModel):
     destination: Optional[str] = Field(description="The destination the user wants to travel to.")
     dest_code: Optional[str] = Field(description="The airport code of the user's destination.")
     travel_class: Optional[Literal[0, 1, 2, 3, 4]] = Field(description="The travel class specified by the user.")
-    start_date: Optional[date] = Field(description="The start date of the trip.")
-    end_date: Optional[date] = Field(description="The end date of the trip.")
+    start_date: Optional[str] = Field(description="The start date of the trip in YYYY-MM-DD format.")
+    end_date: Optional[str] = Field(description="The end date of the trip in YYYY-MM-DD format.")
     num_adults: Optional[int] = Field(description="The number of adults traveling.")
     num_children: Optional[int] = Field(description="The number of children traveling.")
     user_preferences: Optional[Dict[str, Any]] = Field(description="User preferences and requirements.")
@@ -366,8 +366,13 @@ async def travel_itinerary_planner(state: OverallState) -> OverallState:
     """
 
     # print("Initializing LLMs...")
-    llm_deepseek, llm_openai = await initialize_llm()
+    # llm_deepseek, llm_openai = await initialize_llm()
 
+    llm_openai = LangchainChatDeepSeek(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model="gpt-4o"
+    )
+    
     # Validate state messages
     if not state.messages:
         raise ValueError("Error: No messages found in state.")
@@ -376,13 +381,21 @@ async def travel_itinerary_planner(state: OverallState) -> OverallState:
     # print(f"DEBUG: Last message received -> {last_message}")
 
     # Create chain
-    chain = create_chain(llm_deepseek)
-
+    chain = create_chain(llm_openai)
+    # structured_output = chain.invoke({"query": last_message})
+    # if structured_output is not None:
+    #     print("Structured output 1:", structured_output)
+    # else:
+    #     print("Structured output 1 is None")
+        
     # Function to invoke chain asynchronously
     async def invoke_chain(chain):
         """Runs the chain asynchronously and ensures it's truly async-compatible."""
         try:
-            structured_output = await chain.ainvoke({"query": last_message})  # Async invocation
+            # print("started")
+            # structured_output = await chain.ainvoke({"query": last_message})  # Async invocation
+            structured_output = await asyncio.to_thread(chain.invoke, {"query": last_message})  # Async invocation
+            # print("started structured output")
             if structured_output is None:
                 raise ValueError("LLM returned None instead of a valid response.")
             return structured_output
@@ -390,9 +403,23 @@ async def travel_itinerary_planner(state: OverallState) -> OverallState:
             # print(f"DEBUG: Error invoking async LLM: {e}")
             return None
 
+    # def invoke_chain(chain):
+    #     """Runs the chain asynchronously and ensures it's truly async-compatible."""
+    #     try:
+    #         print("started")
+    #         # structured_output = await chain.ainvoke({"query": last_message})  # Async invocation
+    #         structured_output = chain.invoke({"query": last_message})  # Async invocation
+    #         print("started structured output")
+    #         if structured_output is None:
+    #             raise ValueError("LLM returned None instead of a valid response.")
+    #         return structured_output
+    #     except Exception as e:
+    #         # print(f"DEBUG: Error invoking async LLM: {e}")
+    #         return None
+        
     # **First Attempt (DeepSeek)**
     structured_output = await invoke_chain(chain)
-    # print("Structured output:", structured_output)
+    # structured_output = invoke_chain(chain)
 
     # **Switch to GPT-4o if DeepSeek Fails**
     if structured_output is None:
@@ -439,8 +466,8 @@ async def flight_finder_node(state: OverallState) -> OverallState:
     # Extract inputs from the state
     departure_airport = state.loc_code
     arrival_airport = state.dest_code
-    departure_date = state.start_date.strftime("%Y-%m-%d") if state.start_date else None
-    return_date = state.end_date.strftime("%Y-%m-%d") if state.end_date else None
+    departure_date = state.start_date if state.start_date else None
+    return_date = state.end_date if state.end_date else None
     adults = state.num_adults or 1
     children = state.num_children or 0
     travel_class = state.travel_class
@@ -574,17 +601,18 @@ async def flight_finder_tool_node(state: OverallState) -> OverallState:
     A Tool Node that calls Google Flights tools in parallel
     and stores the results in the `flights` state variable.
     """
+    # print("Node Started Flight Finder Tool Node")
     # Extract inputs from the state
     location = state.location
     loc_code = state.loc_code
     destination = state.destination
     dest_code = state.dest_code
-    start_date = state.start_date.strftime("%Y-%m-%d") if state.start_date else None
-    end_date = state.end_date.strftime("%Y-%m-%d") if state.end_date else None
+    start_date = state.start_date if state.start_date else None
+    end_date = state.end_date if state.end_date else None
     num_adults = state.num_adults or 1
     num_children = state.num_children or 0
     travel_class = state.travel_class
-    user_preferences = state.user_preferences
+    user_preferences = state.user_preferences or {}  # Ensure it's always a dictionary
 
     # Initialize a temporary list to store flight results
     flights_dict = {}
@@ -678,9 +706,9 @@ class AccommodationOutput(BaseModel):
     location: str = Field(..., description="The exact location or neighborhood where the traveler wants to stay (e.g., 'Brooklyn').")
     checkin_date: str = Field(..., description="The check-in date in YYYY-MM-DD format.")
     checkout_date: str = Field(..., description="The check-out date in YYYY-MM-DD format.")
-    adults: int = Field(default=2, description="The number of adult guests.")
-    rooms: int = Field(default=1, description="The number of rooms.")
-    currency: str = Field(default="USD", description="The currency for the prices.")
+    adults: int = Field(..., description="The number of adult guests.")
+    rooms: int = Field(..., description="The number of rooms.")
+    currency: str = Field(..., description="The currency for the prices.")
 
 
 async def airbnb_node(state: OverallState) -> OverallState:
@@ -690,7 +718,7 @@ async def airbnb_node(state: OverallState) -> OverallState:
     """
     # print("Node Started Airbnb Node")
     llm = LangchainChatDeepSeek(
-         api_key=os.getenv("OPENAI_API_KEY"),
+        api_key=os.getenv("OPENAI_API_KEY"),
         model="gpt-4o"
     )
 
@@ -855,7 +883,7 @@ async def activities_node(state: OverallState) -> OverallState:
     This node uses a React agent to find exciting activities and places for the user.
     If an error occurs (e.g., "No generation chunks were returned"), the function retries up to 3 times.
     """
-
+    # print("Node Started Activities Node")
     def parse_activities_output(activities_output: str) -> List[Dict[str, Any]]:
         """
         Parses the raw string output of activities into a list of dictionaries.
@@ -1011,10 +1039,10 @@ class TicketmasterOutput(BaseModel):
     start_date_time: str = Field(..., description="The start date and time for event search in ISO 8601 format (e.g., '2025-02-01T00:00:00Z').")
     end_date_time: str = Field(..., description="The end date and time for event search in ISO 8601 format (e.g., '2025-02-28T23:59:59Z').")
     keywords: List[str] = Field(..., description="A list of keywords representing exciting activities or events for the location (e.g., ['music', 'theater', 'tech']).")
-    country_code: str = Field(default="US", description="The country code for the location (e.g., 'US').")
-    size: int = Field(default=15, description="The number of events to retrieve per keyword.")
-    page: int = Field(default=1, description="The page number for pagination.")
-    sort: str = Field(default="relevance,desc", description="The sorting criteria for events.")
+    country_code: str = Field(..., description="The country code for the location (e.g., 'US').")
+    size: int = Field(..., description="The number of events to retrieve per keyword.")
+    page: int = Field(..., description="The page number for pagination.")
+    sort: str = Field(..., description="The sorting criteria for events.")
 
 # Define the Ticketmaster node
 async def ticketmaster_node(state: OverallState) -> OverallState:
@@ -1066,9 +1094,9 @@ async def ticketmaster_node(state: OverallState) -> OverallState:
            - end_date_time: The end date and time in ISO 8601 format.
            - keywords: A list of keywords.
            - country_code: The country code.
-           - size: The number of events to retrieve per keyword.
-           - page: The page number for pagination.
-           - sort: The sorting criteria for events.
+           - size: The number of events to retrieve per keyword. If not specified, use the default value of 15.
+           - page: The page number for pagination. If not specified, use the default value of 1.
+           - sort: The sorting criteria for events. If not specified, use the default value of "relevance,desc".
         ### Example Output:
         - location: "New York"
         - start_date_time: "2025-02-01T00:00:00Z"
@@ -1103,9 +1131,9 @@ async def ticketmaster_node(state: OverallState) -> OverallState:
             country_code=structured_output.country_code,
             start_date_time=structured_output.start_date_time,
             end_date_time=structured_output.end_date_time,
-            size=structured_output.size,
-            page=structured_output.page,
-            sort=structured_output.sort
+            size=structured_output.size if structured_output.size else 15,
+            page=structured_output.page if structured_output.page else 1,
+            sort=structured_output.sort if structured_output.sort else "relevance,desc"
         )
 
         # Call the Ticketmaster API
@@ -1133,6 +1161,7 @@ class Recommendations(BaseModel):
     recommendations: Optional[List[Dict[str, str]]] = Field(description="The user's current location or starting point.")
 
 async def recommendations_node(state):
+    # print("Node Started Recommendations Node")
     # Ensure you have OpenAI API key set up
     # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     client = OpenAI(
@@ -1140,7 +1169,8 @@ async def recommendations_node(state):
         )
     
     all_messages = "\n".join([message.content for message in state.messages])
-    preferences_text = "\n".join([f"{key}: {value}" for key, value in state.user_preferences.items()])
+    preferences_text = "\n".join([f"{key}: {value}" for key, value in (state.user_preferences or {}).items()])
+
     query = f"{all_messages}\n\nUser Preferences:\n{preferences_text}"
 
     try:
@@ -1203,7 +1233,7 @@ async def recommendations_node_2(state: OverallState) -> OverallState:
     """
     This node uses a React agent to find crucial travel advice and insights for the user.
     """
-
+    # print("Node Started Recommendations Node 2")
     async def parse_json_output(output: str):
         try:
             return json.loads(output)

@@ -90,7 +90,31 @@ class PocketTraveller:
     
     async def invoke_graph(self, user_input):
         # input_state = {"messages": [HumanMessage(content=user_input)]}
-        input_state = OverallState(messages=[HumanMessage(content=user_input)])  # Let the graph initialize OverallState
+        # input_state = OverallState(messages=[HumanMessage(content=user_input)])  # Let the graph initialize OverallState
+        
+        # Initialize the state with placeholder values that can be overwritten
+        input_state = OverallState(
+            messages=[HumanMessage(content=user_input)],  # Appends new messages
+            location="",  # Placeholder, can be updated later
+            loc_code="",  # Placeholder for airport code
+            destination="",  # Placeholder for destination
+            dest_code="",  # Placeholder for destination airport code
+            budget=0.0,  # Placeholder for budget, can be updated
+            travel_class=0,  # Default as 'None' (0), overwritable
+            start_date=None,  # Initially None, gets updated when available
+            end_date=None,  # Initially None, gets updated when available
+            num_adults=1,  # Default to 1 adult if not specified
+            num_children=0,  # Default to 0 children if not specified
+            sort_by="price",  # Default sorting criteria
+            user_preferences={},  # Empty dictionary, will be populated dynamically
+            accommodation_options="Hotel",  # Default to "Hotel"
+            flights=[],  # Placeholder list, will be populated later
+            accommodation=[],  # Placeholder list, will be populated later
+            activities=[],  # Placeholder list, will be populated later
+            live_events=[],  # Placeholder list, will be populated later
+            recommendations=[],  # Placeholder list, will be populated later
+        )
+
         return await self.graph.ainvoke(input_state, {"recursion_limit": 3000})
 
 # Example usage:
