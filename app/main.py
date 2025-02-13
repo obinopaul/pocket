@@ -92,9 +92,6 @@ async def submit_trip(request: Request, data: TripFormData):
             temp_docx_path = tmp.name
         
         generate_docx(output, temp_docx_path, file_path)
-        
-        # Remove the temporary DOCX file so that only the PDF remains
-        os.remove(temp_docx_path)
 
         email_body = create_email_body(
             data.origin, 
@@ -108,8 +105,11 @@ async def submit_trip(request: Request, data: TripFormData):
             to_email=data.email, 
             subject="Your Pocket Travel Plan", 
             body=email_body, 
-            file_path=file_path
+            file_path=temp_docx_path
         )
+        
+        # Remove the temporary DOCX file so that only the PDF remains
+        os.remove(temp_docx_path)
         
         return JSONResponse(content={"message": "Trip details received. An email will be sent shortly."})
     
