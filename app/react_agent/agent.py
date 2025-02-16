@@ -42,7 +42,7 @@ from app.react_agent.tools import (TOOLS, weather_tool,
                                    flight_tools_condition, accomodation_tools_condition, activity_planner_tools_condition, 
                                    FlightSearchInput, BookingSearchInput, GoogleMapsPlacesInput,
                                    TicketmasterEventSearchInput, ticketmaster_tool, AirbnbSearchInput, airbnb_tool,
-                                   google_flights_tool, FlightSearchInput_2)
+                                   google_flights_tool, FlightSearchInput_2, google_flights_tool_sync)
 
 from app.react_agent.utils import load_chat_model
 from langchain_core.tools import tool
@@ -457,13 +457,111 @@ async def travel_itinerary_planner(state: OverallState) -> OverallState:
 
 #--------------------------------------------Flight Finder Node--------------------------------------------
 
+# async def flight_finder_node(state: OverallState) -> OverallState:
+#     """
+#     A Node that calls the Google Flights tool to find flights based on the state inputs.
+#     The results are stored in the `state.flights` list.
+#     """
+#     # print("Node Started Flight Node")
+#     # Extract inputs from the state
+#     departure_airport = state.loc_code
+#     arrival_airport = state.dest_code
+#     departure_date = state.start_date if state.start_date else None
+#     return_date = state.end_date if state.end_date else None
+#     adults = state.num_adults or 1
+#     children = state.num_children or 0
+#     travel_class = state.travel_class
+#     sort_by = state.sort_by or "price"
+   
+#     # Define travel class mapping
+#     travel_class_mapping = {
+#         1: "economy",
+#         2: "economy",  # Map premium economy to economy since it's not supported
+#         3: "business",
+#         4: "first",
+#     }
+
+#     async def search_flights():
+#         """
+#         Calls the Google Flights tool and returns results.
+#         If an error occurs, it logs it and returns None.
+#         """
+#         try:
+#             flights_list = []
+#             if travel_class == 0:
+#                 input_data = FlightSearchInput_2(
+#                     departure_airport=departure_airport,
+#                     arrival_airport=arrival_airport,
+#                     departure_date=departure_date,
+#                     return_date=return_date,
+#                     adults=adults,
+#                     children=children,
+#                     travel_class="all",
+#                     sort_by=sort_by,
+#                 )
+#             else:
+#                 class_name = travel_class_mapping.get(travel_class, "economy")
+#                 input_data = FlightSearchInput_2(
+#                     departure_airport=departure_airport,
+#                     arrival_airport=arrival_airport,
+#                     departure_date=departure_date,
+#                     return_date=return_date,
+#                     adults=adults,
+#                     children=children,
+#                     travel_class=class_name,
+#                     sort_by=sort_by,
+#                 )
+
+#             # Call the Google Flights tool
+#             result = await google_flights_tool.coroutine(input_data)
+#             # result = await asyncio.to_thread(google_flights_tool.func, input_data)
+
+#             # Check if the response contains an error message
+#             if isinstance(result, list) and len(result) > 0 and "error" in result[0]:
+#                 # print(f"Flight API error detected: {result[0]['error']}")
+#                 return result  # Return the error message instead of treating it as None
+            
+#             if not result:
+#                 raise ValueError("No flights found.")
+
+#             flights_list.extend(result)
+            
+#             return flights_list
+
+#         except Exception as e:
+#             # print(f"Flight search error: {e}")
+#             return [{"error": f"Flight search failed: {str(e)}"}]
+        
+#     # **First Attempt**
+#     flights = await search_flights()
+
+#     # **Retry if an error message is present**
+#     attempts = 0
+#     while isinstance(flights, list) and len(flights) > 0 and "error" in flights[0] and attempts < 4:
+#         # print(f"Retrying flight search (attempt {attempts + 1})...")
+#         await asyncio.sleep(3)  # Short delay before retrying
+#         flights = await search_flights()
+#         attempts += 1
+        
+#     # **If all retries fail, assign the last error message as fallback**
+#     if isinstance(flights, list) and len(flights) > 0 and "error" in flights[0]:
+#         state.flights = flights
+#     else:
+#         state.flights = flights
+
+#     # Return the updated state
+#     return {
+#         "flights": state.flights
+#     }
+
+
+
+
 async def flight_finder_node(state: OverallState) -> OverallState:
     """
     A Node that calls the Google Flights tool to find flights based on the state inputs.
-    The results are stored in the `state.flights` list.
+    The results are stored in the state.flights list.
     """
-    # print("Node Started Flight Node")
-    # Extract inputs from the state
     departure_airport = state.loc_code
     arrival_airport = state.dest_code
     departure_date = state.start_date if state.start_date else None
@@ -476,10 +574,24 @@ async def flight_finder_node(state: OverallState) -> OverallState:
     # Define travel class mapping
     travel_class_mapping = {
         1: "economy",
-        2: "economy",  # Map premium economy to economy since it's not supported
+        2: "economy",
         3: "business",
         4: "first",
     }
+
+    def create_input_data():
+        """Helper function to create input data to avoid code duplication"""
+        class_name = "all" if travel_class == 0 else travel_class_mapping.get(travel_class, "economy")
+        return FlightSearchInput_2(
+            departure_airport=departure_airport,
+            arrival_airport=arrival_airport,
+            departure_date=departure_date,
+            return_date=return_date,
+            adults=adults,
+            children=children,
+            travel_class=class_name,
+            sort_by=sort_by,
+        )
 
     async def search_flights():
         """
@@ -487,73 +599,58 @@ async def flight_finder_node(state: OverallState) -> OverallState:
         If an error occurs, it logs it and returns None.
         """
         try:
-            flights_list = []
-            if travel_class == 0:
-                input_data = FlightSearchInput_2(
-                    departure_airport=departure_airport,
-                    arrival_airport=arrival_airport,
-                    departure_date=departure_date,
-                    return_date=return_date,
-                    adults=adults,
-                    children=children,
-                    travel_class="all",
-                    sort_by=sort_by,
-                )
-            else:
-                class_name = travel_class_mapping.get(travel_class, "economy")
-                input_data = FlightSearchInput_2(
-                    departure_airport=departure_airport,
-                    arrival_airport=arrival_airport,
-                    departure_date=departure_date,
-                    return_date=return_date,
-                    adults=adults,
-                    children=children,
-                    travel_class=class_name,
-                    sort_by=sort_by,
-                )
-
-            # Call the Google Flights tool
+            input_data = create_input_data()
             result = await google_flights_tool.coroutine(input_data)
-            # result = await asyncio.to_thread(google_flights_tool.func, input_data)
 
-            # Check if the response contains an error message
-            if isinstance(result, list) and len(result) > 0 and "error" in result[0]:
-                # print(f"Flight API error detected: {result[0]['error']}")
-                return result  # Return the error message instead of treating it as None
-            
+            if isinstance(result, list) and result and "error" in result[0]:
+                return result
+
             if not result:
                 raise ValueError("No flights found.")
 
-            flights_list.extend(result)
-            
-            return flights_list
+            return result
 
         except Exception as e:
-            # print(f"Flight search error: {e}")
             return [{"error": f"Flight search failed: {str(e)}"}]
 
-    # **First Attempt**
-    flights = await search_flights()
+    async def search_flights_sync():
+        """
+        Synchronous fallback for flight search.
+        """
+        try:
+            input_data = create_input_data()
+            result = await asyncio.to_thread(google_flights_tool_sync.func, input_data)
 
-    # **Retry if an error message is present**
+            if isinstance(result, list) and result and "error" in result[0]:
+                return result
+
+            if not result:
+                raise ValueError("No flights found.")
+
+            return result
+
+        except Exception as e:
+            return [{"error": f"Flight search failed: {str(e)}"}]
+
+    # Main search logic with retries
+    flights = await search_flights()
     attempts = 0
-    while isinstance(flights, list) and len(flights) > 0 and "error" in flights[0] and attempts < 4:
-        # print(f"Retrying flight search (attempt {attempts + 1})...")
-        await asyncio.sleep(3)  # Short delay before retrying
+    
+    while (
+        isinstance(flights, list) 
+        and flights 
+        and "error" in flights[0] 
+        and attempts < 4
+    ):
+        await asyncio.sleep(3)
         flights = await search_flights()
         attempts += 1
 
-    # **If all retries fail, assign the last error message as fallback**
-    if isinstance(flights, list) and len(flights) > 0 and "error" in flights[0]:
-        # print("Final retry failed. Assigning error response.")
-        state.flights = flights
-    else:
-        state.flights = flights
+    # Fallback to sync search if all retries fail
+    if isinstance(flights, list) and flights and "error" in flights[0]:
+        flights = await search_flights_sync()
 
-    # Return the updated state
-    return {
-        "flights": state.flights
-    }
+    return {"flights": flights}
 
 
 def flights_router(

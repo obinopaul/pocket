@@ -501,13 +501,164 @@ google_flights_tool = Tool(
     args_schema=FlightSearchInput_2
 )
 
-# # Initialize the tool
-# google_flights_tool = Tool(
-#     name="Flight Search",
-#     func=GoogleFlightsTool().search_flights,
-#     description="Provides flight information between two locations, including airlines, prices, departure/arrival times, and more.",
-#     args_schema=FlightSearchInput_2
-# )
+
+#----------------------------------------------------------------------------------------------------------------------------------
+class GoogleFlightsToolSync:
+    def __init__(self):
+        pass
+
+    def _filter_flights_by_class(self, flights: List[Dict], travel_class: str) -> List[Dict]:
+        """
+        Filter flights by travel class.
+        """
+        if travel_class == "all":
+            return flights
+        return [
+            flight for flight in flights 
+            if flight.get("travel_class", "economy").lower() == travel_class.lower()
+        ]
+
+    def _sort_flights(self, flights: List[Dict], sort_by: str) -> List[Dict]:
+        """
+        Sort flights by price, duration, departure, or arrival.
+        """
+        if sort_by == "price":
+            # Remove currency symbols and commas, then convert to float for sorting
+            return sorted(
+                flights, 
+                key=lambda x: float(x.get("price", "0").replace('$', '').replace(',', ''))
+            )
+        elif sort_by == "duration":
+            # Assuming duration is in format "X hr Y min"
+            def duration_in_minutes(flight):
+                parts = flight.get("duration", "0 hr 0 min").split()
+                hours = int(parts[0]) if len(parts) > 0 else 0
+                minutes = int(parts[2]) if len(parts) > 2 else 0
+                return hours * 60 + minutes
+            return sorted(flights, key=duration_in_minutes)
+        elif sort_by == "departure":
+            return sorted(
+                flights, 
+                key=lambda x: datetime.strptime(x.get("departure_time", ""), "%I:%M %p on %a, %b %d, %Y")
+            )
+        elif sort_by == "arrival":
+            return sorted(
+                flights, 
+                key=lambda x: datetime.strptime(x.get("arrival_time", ""), "%I:%M %p on %a, %b %d, %Y")
+            )
+        return flights
+
+    def _structure_flight_data(self, result: Result, from_airport: str, to_airport: str, year: int) -> List[Dict]:
+        """
+        Structure flight data into a list of dictionaries, including airport codes and year in time strings.
+        """
+        flights = []
+        for flight in result.flights:
+            flight_dict = {
+                "airline": flight.name,
+                "departure_time": f"{flight.departure}, {year}",
+                "arrival_time": f"{flight.arrival}, {year}",
+                "departure_airport": from_airport,
+                "arrival_airport": to_airport,
+                "duration": flight.duration,
+                "stops": flight.stops,
+                "price": flight.price,
+                "travel_class": getattr(flight, "seat", "economy"),  # Default to economy if seat not present
+            }
+            flights.append(flight_dict)
+        return flights
+
+    def search_flights(self, input: FlightSearchInput_2) -> List[Dict]:
+        """
+        Search for flights and return a list of dictionaries.
+        """
+        try:
+            structured_output = []
+
+            # Prepare Passengers object
+            passengers_obj = Passengers(
+                adults=input.adults,
+                children=input.children,
+                infants_in_seat=0,
+                infants_on_lap=0
+            )
+
+            # Extract year from departure_date
+            departure_year = int(input.departure_date.split('-')[0])
+
+            # --- Departure Flights ---
+            departure_flight_data = [
+                FlightData(
+                    date=input.departure_date,
+                    from_airport=input.departure_airport,
+                    to_airport=input.arrival_airport
+                )
+            ]
+
+            departure_result: Result = get_flights(
+                flight_data=departure_flight_data,
+                trip="one-way",
+                seat=input.travel_class if input.travel_class != "all" else "economy",  # Default to economy if "all"
+                passengers=passengers_obj,
+                fetch_mode="fallback",
+            )
+
+            departure_flights = self._structure_flight_data(
+                departure_result, 
+                from_airport=input.departure_airport, 
+                to_airport=input.arrival_airport,
+                year=departure_year
+            )
+            departure_flights = self._filter_flights_by_class(departure_flights, input.travel_class)
+            departure_flights = self._sort_flights(departure_flights, input.sort_by)
+
+            structured_output.append({"departure flights": departure_flights})
+
+            # --- Arrival Flights (if return_date is provided) ---
+            if input.return_date:
+                arrival_year = int(input.return_date.split('-')[0])
+                arrival_flight_data = [
+                    FlightData(
+                        date=input.return_date,
+                        from_airport=input.arrival_airport,
+                        to_airport=input.departure_airport
+                    )
+                ]
+
+                arrival_result: Result = get_flights(
+                    flight_data=arrival_flight_data,
+                    trip="one-way",
+                    seat=input.travel_class if input.travel_class != "all" else "economy",
+                    passengers=passengers_obj,
+                    fetch_mode="fallback",
+                )
+
+                arrival_flights = self._structure_flight_data(
+                    arrival_result, 
+                    from_airport=input.arrival_airport, 
+                    to_airport=input.departure_airport,
+                    year=arrival_year
+                )
+                arrival_flights = self._filter_flights_by_class(arrival_flights, input.travel_class)
+                arrival_flights = self._sort_flights(arrival_flights, input.sort_by)
+
+                structured_output.append({"arrival flights": arrival_flights})
+
+            return structured_output
+
+        except Exception as e:
+            # Always return a list of dictionaries, even in case of error
+            return [{"error": f"An error occurred: {str(e)}"}]
+
+# Initialize the tool
+google_flights_tool_sync = Tool(
+    name="Flight Search",
+    func=GoogleFlightsToolSync().search_flights,
+    description="Provides flight information between two locations, including airlines, prices, departure/arrival times, and more.",
+    args_schema=FlightSearchInput_2
+)
+
+
 
 #----------------------------------------------------------------------------------------------------------------------------
 # Define Input Schema
